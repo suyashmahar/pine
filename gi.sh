@@ -1,0 +1,194 @@
+#! /usr/bin/env bash
+
+# Global constants
+GIG_VERSION=0.1b
+FILE_NOT_FOUND_EX=2
+LOG_FILE=/tmp/gig_logs/log.txt
+SRC_PATH=""
+SCRIPT_PATH=""
+GITIGNORE_REPO="https://github.com/github/gitignore.git"
+# Global variables
+declare -A map # map for easy searching of names
+
+
+# -~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~
+# From: https://stackoverflow.com/a/38153758/6556360
+# parse the arguments.
+parse_params ()
+{
+    local existing_named
+    local ARGV=()
+    echo "local ARGV=(); "
+    while [[ "$1" != "" ]]; do
+        # If equals delimited named parameter
+        if [[ "$1" =~ ^..*=..* ]]; then
+            # key is part before first =
+            local _key=$(echo "$1" | cut -d = -f 1)
+            # val is everything after key and = (protect from param==value error)
+            local _val="${1/$_key=}"
+            # remove dashes from key name
+            _key=${_key//\-}
+            # search for existing parameter name
+            if (echo "$existing_named" | grep "\b$_key\b" >/dev/null); then
+                # if name already exists then it's a multi-value named parameter
+                # re-declare it as an array if needed
+                if ! (declare -p _key 2> /dev/null | grep -q 'declare \-a'); then
+                    echo "$_key=(\"\$$_key\");"
+                fi
+                # append new value
+                echo "$_key+=('$_val');"
+            else
+                # single-value named parameter
+                echo "local $_key=\"$_val\";"
+                existing_named=" $_key"
+            fi
+            # If standalone named parameter
+        elif [[ "$1" =~ ^\-. ]]; then
+            # remove dashes
+            local _key=${1//\-}
+            echo "local $_key=\"$_key\";"
+            # non-named parameter
+        else
+            # escape asterisk to prevent bash asterisk expansion
+            _escaped=${1/\*/\'\"*\"\'}
+            echo "ARGV+=('$_escaped');"
+        fi
+        shift
+    done
+}
+# -~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~
+
+# Updates all gitignore files in ${SCRIPTPATH}/gitignore
+function update_config_files() {
+    if [[ ! -d ${SCRIPTPATH}/gitignore/.git ]]; then
+	git -C "${SCRIPTPATH}/gitignore" pull origin master
+
+	for f in ${SCRIPTPATH}/gitignore/*; do
+	    mv $f ${f,,} # to lowercase
+	done
+    else
+	echo "WARNING: Cannot find local .gitignore repository, clonning..."
+	git -C "${SCRIPTPATH}/gitignore" "$GITIGNORE_REPO"
+    fi
+}
+# Compile names to a list
+function compile_names() {
+    for gitignoreFile in gitignore/*.gitignore; do
+	filename=$(basename "$gitignoreFile") # remove path
+	configName="${filename%.*}" # remove extension
+	configName="${configName,,}" # to lowercase
+ 	name="$name $configName" # append to name list
+    done
+    echo "$name" > names.list
+}
+
+function load_names() {
+    if [ ! -d ${SCRIPTPATH}/names.list ]; then
+	storedNames=`cat ${SCRIPTPATH}/names.list` > $LOG_FILE || throw $FILE_NOT_FOUND_EX  # Read compiled list
+    else
+	echo "WARNING: Names list not compiled"
+	echo "use 'gi --help' or 'man gig' for help"
+	echo "INFO: Compiling names list"
+
+	compile_names && echo "Names list compiled"
+	load_names
+
+	return
+    fi
+    
+    # Compile names for map
+    nameArr=($storedNames)
+    for name in "${nameArr[@]}"; do
+	map[$name]=1
+    done
+}
+
+function search_name_in_list() {
+    # Returns 1 if name passed is in compiled map
+    if [ ${map["$1"]+_} ]; then
+	return 0
+    else
+	return 1
+    fi
+}
+
+print_version() {
+    echo -e "Version: $GIG_VERSION"
+}
+
+function print_help() {
+    echo "Gig : gitignore manager"
+    print_version
+    echo "This is help"
+}
+
+# Adds config for $1 to gitignore file  
+function add_config_to_file() {
+    echo "Adding configuration for $arg"
+    echo -e "\n#### ${1} ##########################" >> ${SRC_PATH}/.gitignore
+    echo -e "#### DO NOT DELETE THIS LINE" >> ${SRC_PATH}/.gitignore
+    echo -e "#### GIG" >> ${SRC_PATH}/.gitignore
+    cat "${SCRIPTPATH}/gitignore/${1}.gitignore" >> ${SRC_PATH}/.gitignore
+    echo -e "#### DO NOT DELETE THIS LINE\n" >> ${SRC_PATH}/.gitignore    
+}
+
+# Removes config for $1 from gitignore file  
+function add_config_to_file() {
+    echo "Removing configuration for $arg"
+    echo -e "\n#### ${1} ##########################" >> ${SRC_PATH}/.gitignore
+    echo -e "#### DO NOT DELETE THIS LINE" >> ${SRC_PATH}/.gitignore
+    echo -e "#### GIG" >> ${SRC_PATH}/.gitignore
+    cat "${SCRIPTPATH}/gitignore/${1}.gitignore" >> ${SRC_PATH}/.gitignore
+    echo -e "#### DO NOT DELETE THIS LINE\n" >> ${SRC_PATH}/.gitignore    
+}
+
+function init() {
+    set -e
+    SCRIPTPATH="$( cd "$(dirname "$0")" ; pwd -P )"
+    SRC_PATH="$PWD"
+
+    # Create a gitignore file, if it doesn't exists
+    if [ ! ./.gitignore ]; then
+	echo "Creating .gitignore file"
+	touch ".gitignore"
+    fi
+
+    # Make directory for logs
+    if [ ! -d /tmp/gig_logs ]; then
+	mkdir -p /tmp/gig_logs
+    fi
+    
+    # Load error.sh or display error and exit
+    source "$SCRIPTPATH/inc/error.sh" # &>> /tmp/gig/gig.log || echo "FATAL ERROR: 'inc/error.sh' not found"
+    
+    load_names
+    eval $(parse_params "$@") # Parse parameters
+
+    # If any parameter is help, print help it and exit
+    for arg in "${ARGV[@]}"; do
+	if [[ $help ]]; then
+	    print_help
+	    exit
+	fi
+    done
+
+    # If any parameter is version, print version and exit
+    for arg in "${ARGV[@]}"; do
+	if [ $version ] | [ $v ]; then
+	    print_version
+	    exit
+	fi
+    done
+    
+    # Search each parameter
+    for arg in "${ARGV[@]}"; do
+        search_name_in_list $arg && { # Return 1
+	    add_config_to_file $arg
+	} || { # Return 0
+	    echo "WARNING: configuration file for $arg not found"
+	}
+    done
+}
+
+# Initialise script
+init  "$@"
