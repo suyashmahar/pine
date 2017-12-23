@@ -71,6 +71,7 @@ function update_config_files() {
 	git -C "${SCRIPTPATH}/gitignore" "$GITIGNORE_REPO"
     fi
 }
+
 # Compile names to a list
 function compile_names() {
     for gitignoreFile in gitignore/*.gitignore; do
@@ -125,21 +126,21 @@ function print_help() {
 # Adds config for $1 to gitignore file  
 function add_config_to_file() {
     echo "Adding configuration for $arg"
-    echo -e "\n#### ${1} ##########################" >> ${SRC_PATH}/.gitignore
-    echo -e "#### DO NOT DELETE THIS LINE" >> ${SRC_PATH}/.gitignore
+    echo -e "#### ${1} ##########################" >> ${SRC_PATH}/.gitignore
+    echo -e "#### DO NOT DELETE PRECEDING LINE" >> ${SRC_PATH}/.gitignore
     echo -e "#### GIG" >> ${SRC_PATH}/.gitignore
     cat "${SCRIPTPATH}/gitignore/${1}.gitignore" >> ${SRC_PATH}/.gitignore
-    echo -e "#### DO NOT DELETE THIS LINE\n" >> ${SRC_PATH}/.gitignore    
+    echo -e "#### DO NOT DELETE THIS LINE" >> ${SRC_PATH}/.gitignore    
 }
 
 # Removes config for $1 from gitignore file  
-function add_config_to_file() {
+function remove_config_from_file() {
     echo "Removing configuration for $arg"
-    echo -e "\n#### ${1} ##########################" >> ${SRC_PATH}/.gitignore
-    echo -e "#### DO NOT DELETE THIS LINE" >> ${SRC_PATH}/.gitignore
-    echo -e "#### GIG" >> ${SRC_PATH}/.gitignore
-    cat "${SCRIPTPATH}/gitignore/${1}.gitignore" >> ${SRC_PATH}/.gitignore
-    echo -e "#### DO NOT DELETE THIS LINE\n" >> ${SRC_PATH}/.gitignore    
+    
+    local gitignoreFile=${SRC_PATH}/.gitignore
+    currentcontent=$(<$gitignoreFile)
+
+    echo "$currentcontent" | awk -v a="$1" -f ${SCRIPTPATH}/tools/remove.awk > ${SRC_PATH}/.gitignore
 }
 
 function init() {
@@ -159,12 +160,12 @@ function init() {
     fi
     
     # Load error.sh or display error and exit
-    source "$SCRIPTPATH/inc/error.sh" # &>> /tmp/gig/gig.log || echo "FATAL ERROR: 'inc/error.sh' not found"
+    source "${SCRIPTPATH}/inc/error.sh" # &>> /tmp/gig/gig.log || echo "FATAL ERROR: 'inc/error.sh' not found"
     
     load_names
     eval $(parse_params "$@") # Parse parameters
 
-    # If any parameter is help, print help it and exit
+    # If any parameter is help, print help and exit
     for arg in "${ARGV[@]}"; do
 	if [[ $help ]]; then
 	    print_help
@@ -174,7 +175,7 @@ function init() {
 
     # If any parameter is version, print version and exit
     for arg in "${ARGV[@]}"; do
-	if [ $version ] | [ $v ]; then
+	if [ $version ] || [ $v ]; then
 	    print_version
 	    exit
 	fi
@@ -182,11 +183,15 @@ function init() {
     
     # Search each parameter
     for arg in "${ARGV[@]}"; do
-        search_name_in_list $arg && { # Return 1
-	    add_config_to_file $arg
-	} || { # Return 0
-	    echo "WARNING: configuration file for $arg not found"
-	}
+	if [ $remove ] || [ $r ]; then
+	    remove_config_from_file $arg
+	else
+	    search_name_in_list $arg && { # Return 1
+		add_config_to_file $arg
+	    } || { # Return 0
+		echo "WARNING: configuration file for $arg not found"
+	    }
+	fi
     done
 }
 
