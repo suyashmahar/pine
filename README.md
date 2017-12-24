@@ -11,7 +11,7 @@ Run the following command in your terminal to download and install pine.
 
 If you are using bash:
 ```shell
-git clone https://github.com/suyashmahar/pine.git $HOME/pine && echo 'export PATH="$HOME/pine:$PATH"' >> $HOME/.bash_profile
+git clone https://github.com/suyashmahar/pine.git $HOME/pine && echo 'export PATH="$HOME/pine:$PATH"' >> $HOME/.bashrc && source $HOME/.bashrc
 ```
 
 Usage  
@@ -41,6 +41,6 @@ Demo
 
 Installation
 --------------
-Delete `~/pine` directory and remove the line `export PATH="$HOME/pine:$PATH"` from `~/.bash_profile`.
+Delete `~/pine` directory and remove the line `export PATH="$HOME/pine:$PATH"` from `~/.bashrc`.
 
 
