@@ -42,7 +42,7 @@ For complete help use `pine --help`.
 
 Demo
 ----
-[![asciicast](https://asciinema.org/a/JhrS2JOC5Ge5XVLmp3xOIQxZK.png)](https://asciinema.org/a/JhrS2JOC5Ge5XVLmp3xOIQxZK)
+[![asciicast](https://asciinema.org/a/LJLcFbJlf3AIXABJWSPZpsKq8.png)](https://asciinema.org/a/LJLcFbJlf3AIXABJWSPZpsKq8)
 
 Uninstallation
 --------------
