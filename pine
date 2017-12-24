@@ -100,7 +100,7 @@ function check_and_update_config_files() {
 
 # Compile names to a list
 function compile_names() {
-    for gitignoreFile in gitignore/*.gitignore; do
+    for gitignoreFile in ${SCRIPTPATH}/gitignore/*.gitignore; do
 	filename=$(basename "$gitignoreFile") # remove path
 	configName="${filename%.*}" # remove extension
 	configName="${configName,,}" # to lowercase
