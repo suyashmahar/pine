@@ -60,14 +60,15 @@ parse_params ()
 
 # Updates all gitignore files in ${SCRIPTPATH}/gitignore
 function update_config_files() {
-    echo "${SCRIPTPATH}/gitignore/.git"
+    echo -e "Updating local configuration files...\n"
     if [[ -d ${SCRIPTPATH}/gitignore/.git ]]; then
 	git -C "${SCRIPTPATH}/gitignore" pull origin master -ff && {
 
 	    for f in ${SCRIPTPATH}/gitignore/*; do
 		filename=$(basename "$f")
 		newpath="${SCRIPTPATH}/gitignore/${filename,,}"
-		mv "$f" "$newpath" 
+		# Use output redirection to prevent warning when content of repo is not changed
+		mv "$f" "$newpath" &> /dev/null 
 	    done
 
 	    # Fix symlinks if any
@@ -145,12 +146,12 @@ print_version() {
 function print_help() {
     echo "Gig : gitignore manager"
     print_version
-    echo ""
+    cat "${SCRIPTPATH}/HELP.txt"
 }
 
 # Check if config for $1 exist in .gitignore file
 function check_for_existing_name {
-    local gitignoreFile=${SRC_PATH}/.gitignore
+    local gitignoreFile="${SRC_PATH}/.gitignore"
     currentcontent=$(<$gitignoreFile)
 
     echo "$currentcontent" | awk -v a="$1" -f ${SCRIPTPATH}/utilities/checkconfig.awk && {
@@ -210,28 +211,25 @@ function init() {
     eval $(parse_params "$@") # Parse parameters
 
     # If any parameter is help, print help and exit
-    for arg in "${ARGV[@]}"; do
-	if [[ $help ]]; then
-	    print_help
-	    exit
-	fi
-    done
+    if [[ $help ]]; then
+	print_help
+	exit
+    fi
+
 
     # If any parameter is version, print version and exit
-    for arg in "${ARGV[@]}"; do
-	if [ $version ] || [ $v ]; then
-	    print_version
-	    exit
-	fi
-    done
+    if [ $version ] || [ $v ]; then
+	print_version
+	exit
+    fi
+
 
     # If any parameter is update, update and exit
-    for arg in "${ARGV[@]}"; do
-	if [ $update ] || [ $u ]; then
-	    update_config_files
-	    exit
-	fi
-    done
+    if [ $update ] || [ $u ]; then
+	update_config_files
+	exit
+    fi
+
     
     # Search each parameter
     for arg in "${ARGV[@]}"; do

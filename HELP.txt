@@ -1,0 +1,28 @@
+Usage: pine [Options] config_files ...  
+
+Options:
+========
+
+  Short    Long     Description
+  -----    ----     -----------
+   -r    --remove   Remove configuration for all config files specified from  
+                    .gitignore file in current directory.  
+
+   -u    --update   Update local configuration files and exit.  
+   
+   -v    --version  Print current version number and exit.  
+   
+   -h    --help     Print this text and exit.  
+
+Examples
+========  
+
+To add configuration for java, c:  
+    pine c java
+	
+To remove configuration for java  
+    pine -r java
+	
+To update  
+    pine --update
+	
