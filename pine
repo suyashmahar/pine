@@ -1,7 +1,7 @@
 #! /usr/bin/env bash
 
 # Global constants
-PINE_VERSION=0.1b
+PINE_VERSION=1.0.0
 FILE_NOT_FOUND_EX=2
 LOG_FILE=/tmp/pine_logs/log.txt
 SRC_PATH=""
@@ -114,7 +114,7 @@ function load_names() {
 	storedNames=`cat ${SCRIPTPATH}/names.list` > $LOG_FILE || throw $FILE_NOT_FOUND_EX  # Read compiled list
     else
 	echo "WARNING: Names list not compiled"
-	echo "use 'gi --help' or 'man gig' for help"
+	echo "use 'pine --help'"
 	echo "INFO: Compiling names list"
 
 	compile_names && echo "Names list compiled"
@@ -144,7 +144,7 @@ print_version() {
 }
 
 function print_help() {
-    echo "Gig : gitignore manager"
+    echo "Pine : gitignore manager"
     print_version
     cat "${SCRIPTPATH}/HELP.txt"
 }
@@ -169,7 +169,7 @@ function add_config_to_file() {
 	echo "Adding configuration for $arg"
 	echo -e "#### ${1} ##########################" >> ${SRC_PATH}/.gitignore
 	echo -e "#### DO NOT DELETE PRECEDING LINE" >> ${SRC_PATH}/.gitignore
-	echo -e "#### GIG" >> ${SRC_PATH}/.gitignore
+	echo -e "#### PINE" >> ${SRC_PATH}/.gitignore
 	cat "${SCRIPTPATH}/gitignore/${1}.gitignore" >> ${SRC_PATH}/.gitignore
 	echo -e "#### DO NOT DELETE THIS LINE" >> ${SRC_PATH}/.gitignore
     }
@@ -205,7 +205,7 @@ function init() {
     fi
     
     # Load error.sh or display error and exit
-    source "${SCRIPTPATH}/inc/error.sh" # &>> /tmp/pine/gig.log || echo "FATAL ERROR: 'inc/error.sh' not found"
+    source "${SCRIPTPATH}/inc/error.sh" 
     
     load_names
     eval $(parse_params "$@") # Parse parameters
