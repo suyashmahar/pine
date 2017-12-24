@@ -1,9 +1,9 @@
 #! /usr/bin/env bash
 
 # Global constants
-GIG_VERSION=0.1b
+PINE_VERSION=0.1b
 FILE_NOT_FOUND_EX=2
-LOG_FILE=/tmp/gig_logs/log.txt
+LOG_FILE=/tmp/pine_logs/log.txt
 SRC_PATH=""
 SCRIPT_PATH=""
 GITIGNORE_REPO="https://github.com/github/gitignore.git"
@@ -62,21 +62,31 @@ parse_params ()
 function update_config_files() {
     echo "${SCRIPTPATH}/gitignore/.git"
     if [[ -d ${SCRIPTPATH}/gitignore/.git ]]; then
-	git -C "${SCRIPTPATH}/gitignore" pull origin master -ff
+	git -C "${SCRIPTPATH}/gitignore" pull origin master -ff && {
 
-	for f in ${SCRIPTPATH}/gitignore/*; do
-	    mv $f ${f,,} # to lowercase
-	done
+	    for f in ${SCRIPTPATH}/gitignore/*; do
+		filename=$(basename "$f")
+		newpath="${SCRIPTPATH}/gitignore/${filename,,}"
+		mv "$f" "$newpath" 
+	    done
 
-	# Fix symlinks if any
-	for f in $(find ${SCRIPTPATH}/gitignore/. -type l); do
-	    originalLink=$(readlink $f)
-	    ln -sfT ${originalLink,,} ${f}
-	done
+	    # Fix symlinks if any
+	    for f in $(find ${SCRIPTPATH}/gitignore/. -type l); do
+		originalLink=$(readlink $f)
+		ln -sfT ${originalLink,,} ${f}
+	    done
+	} || {
+	    echo "FATAL ERROR: Cloning failed"
+	    exit
+	}
     else
 	echo "WARNING: Cannot find local .gitignore repository, clonning..."
-	git clone "$GITIGNORE_REPO" "${SCRIPTPATH}/gitignore"
-	update_config_files
+	git clone "$GITIGNORE_REPO" "${SCRIPTPATH}/gitignore" && {
+	    update_config_files
+	} || {
+	    echo "FATAL ERROR: Cloning failed"
+	    exit
+	}
     fi
 }
 
@@ -95,11 +105,11 @@ function compile_names() {
 	configName="${configName,,}" # to lowercase
  	name="$name $configName" # append to name list
     done
-    echo "$name" > names.list
+    echo "$name" > ${SCRIPTPATH}/names.list
 }
 
 function load_names() {
-    if [ ! -d ${SCRIPTPATH}/names.list ]; then
+    if [ -f ${SCRIPTPATH}/names.list ]; then
 	storedNames=`cat ${SCRIPTPATH}/names.list` > $LOG_FILE || throw $FILE_NOT_FOUND_EX  # Read compiled list
     else
 	echo "WARNING: Names list not compiled"
@@ -129,23 +139,39 @@ function search_name_in_list() {
 }
 
 print_version() {
-    echo -e "Version: $GIG_VERSION"
+    echo -e "Version: $PINE_VERSION"
 }
 
 function print_help() {
     echo "Gig : gitignore manager"
     print_version
-    echo "This is help"
+    echo ""
 }
 
-# Adds config for $1 to gitignore file  
+# Check if config for $1 exist in .gitignore file
+function check_for_existing_name {
+    local gitignoreFile=${SRC_PATH}/.gitignore
+    currentcontent=$(<$gitignoreFile)
+
+    echo "$currentcontent" | awk -v a="$1" -f ${SCRIPTPATH}/utilities/checkconfig.awk && {
+	return 1
+    } || {
+	return 0
+    }
+}
+
+# Adds config for $1 to gitignore file if it doesn't exist
 function add_config_to_file() {
-    echo "Adding configuration for $arg"
-    echo -e "#### ${1} ##########################" >> ${SRC_PATH}/.gitignore
-    echo -e "#### DO NOT DELETE PRECEDING LINE" >> ${SRC_PATH}/.gitignore
-    echo -e "#### GIG" >> ${SRC_PATH}/.gitignore
-    cat "${SCRIPTPATH}/gitignore/${1}.gitignore" >> ${SRC_PATH}/.gitignore
-    echo -e "#### DO NOT DELETE THIS LINE" >> ${SRC_PATH}/.gitignore    
+    check_for_existing_name $1 && {
+	echo "ERROR: Configuration exists, skipping"
+    } || {
+	echo "Adding configuration for $arg"
+	echo -e "#### ${1} ##########################" >> ${SRC_PATH}/.gitignore
+	echo -e "#### DO NOT DELETE PRECEDING LINE" >> ${SRC_PATH}/.gitignore
+	echo -e "#### GIG" >> ${SRC_PATH}/.gitignore
+	cat "${SCRIPTPATH}/gitignore/${1}.gitignore" >> ${SRC_PATH}/.gitignore
+	echo -e "#### DO NOT DELETE THIS LINE" >> ${SRC_PATH}/.gitignore
+    }
 }
 
 # Removes config for $1 from gitignore file  
@@ -167,18 +193,18 @@ function init() {
     check_and_update_config_files
     
     # Create a gitignore file, if it doesn't exists
-    if [ ! ./.gitignore ]; then
-	echo "Creating .gitignore file"
+    if [ ! -f ./.gitignore ]; then
+	echo "INFO: Creating .gitignore file"
 	touch ".gitignore"
     fi
 
     # Make directory for logs
-    if [ ! -d /tmp/gig_logs ]; then
-	mkdir -p /tmp/gig_logs
+    if [ ! -d /tmp/pine_logs ]; then
+	mkdir -p /tmp/pine_logs
     fi
     
     # Load error.sh or display error and exit
-    source "${SCRIPTPATH}/inc/error.sh" # &>> /tmp/gig/gig.log || echo "FATAL ERROR: 'inc/error.sh' not found"
+    source "${SCRIPTPATH}/inc/error.sh" # &>> /tmp/pine/gig.log || echo "FATAL ERROR: 'inc/error.sh' not found"
     
     load_names
     eval $(parse_params "$@") # Parse parameters
