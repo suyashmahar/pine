@@ -80,6 +80,13 @@ function update_config_files() {
     fi
 }
 
+# Checks if config files exists, if not download them
+function check_and_update_config_files() {
+    if [[ ! -d  ${SCRIPTPATH}/gitignore/.git ]]; then
+	update_config_files
+    fi
+}
+
 # Compile names to a list
 function compile_names() {
     for gitignoreFile in gitignore/*.gitignore; do
@@ -156,6 +163,9 @@ function init() {
     SCRIPTPATH="$( cd "$(dirname "$0")" ; pwd -P )"
     SRC_PATH="$PWD"
 
+    # Checks the presence of config files
+    check_and_update_config_files
+    
     # Create a gitignore file, if it doesn't exists
     if [ ! ./.gitignore ]; then
 	echo "Creating .gitignore file"
@@ -196,7 +206,7 @@ function init() {
 	    exit
 	fi
     done
-    echo "ho"
+    
     # Search each parameter
     for arg in "${ARGV[@]}"; do
 	if [ $remove ] || [ $r ]; then
