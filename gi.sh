@@ -60,15 +60,23 @@ parse_params ()
 
 # Updates all gitignore files in ${SCRIPTPATH}/gitignore
 function update_config_files() {
-    if [[ ! -d ${SCRIPTPATH}/gitignore/.git ]]; then
-	git -C "${SCRIPTPATH}/gitignore" pull origin master
+    echo "${SCRIPTPATH}/gitignore/.git"
+    if [[ -d ${SCRIPTPATH}/gitignore/.git ]]; then
+	git -C "${SCRIPTPATH}/gitignore" pull origin master -ff
 
 	for f in ${SCRIPTPATH}/gitignore/*; do
 	    mv $f ${f,,} # to lowercase
 	done
+
+	# Fix symlinks if any
+	for f in $(find ${SCRIPTPATH}/gitignore/. -type l); do
+	    originalLink=$(readlink $f)
+	    ln -sfT ${originalLink,,} ${f}
+	done
     else
 	echo "WARNING: Cannot find local .gitignore repository, clonning..."
-	git -C "${SCRIPTPATH}/gitignore" "$GITIGNORE_REPO"
+	git clone "$GITIGNORE_REPO" "${SCRIPTPATH}/gitignore"
+	update_config_files
     fi
 }
 
@@ -140,7 +148,7 @@ function remove_config_from_file() {
     local gitignoreFile=${SRC_PATH}/.gitignore
     currentcontent=$(<$gitignoreFile)
 
-    echo "$currentcontent" | awk -v a="$1" -f ${SCRIPTPATH}/tools/remove.awk > ${SRC_PATH}/.gitignore
+    echo "$currentcontent" | awk -v a="$1" -f ${SCRIPTPATH}/utilities/remove.awk > ${SRC_PATH}/.gitignore
 }
 
 function init() {
@@ -180,7 +188,15 @@ function init() {
 	    exit
 	fi
     done
-    
+
+    # If any parameter is update, update and exit
+    for arg in "${ARGV[@]}"; do
+	if [ $update ] || [ $u ]; then
+	    update_config_files
+	    exit
+	fi
+    done
+    echo "ho"
     # Search each parameter
     for arg in "${ARGV[@]}"; do
 	if [ $remove ] || [ $r ]; then
