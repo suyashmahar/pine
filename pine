@@ -175,6 +175,16 @@ function add_config_to_file() {
     }
 }
 
+# Prints all the config of the file 
+function list_all_config() {
+    echo "Following configurations found:"
+    if [ ! -f "${SRC_PATH}/.gitignore" ]; then
+	echo "ERROR: No .gitignore file found in current directory, Exiting"
+    else
+	cat "${SRC_PATH}/.gitignore" | awk -f ${SCRIPTPATH}/utilities/listallconfig.awk 
+    fi
+}
+
 # Removes config for $1 from gitignore file  
 function remove_config_from_file() {
     echo "Removing configuration for $arg"
@@ -230,6 +240,14 @@ function init() {
 	exit
     fi
 
+    
+    # If any parameter is for listing configs, list and exit
+    if [ $list ]; then
+	list_all_config 
+	exit
+    fi
+
+    
     
     # Search each parameter
     for arg in "${ARGV[@]}"; do
