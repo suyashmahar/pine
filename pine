@@ -126,6 +126,7 @@ function add_config_to_file() {
 	echo "ERROR: Configuration exists, skipping"
     } || {
 	echo "Adding configuration for $arg"
+	echo "" >> ${SRC_PATH}/.gitignore
 	echo -e "#### ${1} ##########################" >> ${SRC_PATH}/.gitignore
 	echo -e "#### DO NOT DELETE PRECEDING LINE" >> ${SRC_PATH}/.gitignore
 	echo -e "#### PINE" >> ${SRC_PATH}/.gitignore
