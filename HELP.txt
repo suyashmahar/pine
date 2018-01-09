@@ -8,7 +8,10 @@ Options:
    -r    --remove   Remove configuration for all config files specified from  
                     .gitignore file in current directory.  
 
-   -u    --update   Update local configuration files and exit.  
+   -u    --update   Update local configuration files and exit.
+
+         --list     List all configuration files present in current directory's
+	            .gitignore file
    
    -v    --version  Print current version number and exit.  
    
@@ -18,11 +21,14 @@ Examples
 ========  
 
 To add configuration for java, c:  
-    pine c java
+    pine c java  
 	
-To remove configuration for java  
-    pine -r java
+To remove configuration for java:  
+    pine -r java  
 	
-To update  
-    pine --update
+To list all configurations present in current directory's .gitignore file:  
+    pine --list  
+	
+To update:  
+    pine --update  
 	
