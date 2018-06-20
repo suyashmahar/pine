@@ -1,7 +1,7 @@
 #! /usr/bin/env bash
 
 # Global constants
-PINE_VERSION=1.0.0
+PINE_VERSION=1.1.0
 FILE_NOT_FOUND_EX=2
 LOG_FILE=/tmp/pine_logs/log.txt
 SCRIPTPATH="$( cd "$(dirname "$0")" ; pwd -P )"
