@@ -11,12 +11,12 @@ Run the following command in your terminal to download and install pine.
 
 If you are using bash:
 ```shell
-git clone https://github.com/suyashmahar/pine.git $HOME/pine && echo 'export PATH="$HOME/pine:$PATH"' >> $HOME/.bashrc && source $HOME/.bashrc
+git clone https://github.com/suyashmahar/pine.git "$HOME/pine" && echo 'export PATH="$HOME/pine:$PATH"' >> "$HOME/.bashrc" && source "$HOME/.bashrc"
 ```
 
 If you are using zsh:
 ```shell
-git clone https://github.com/suyashmahar/pine.git $HOME/pine && echo 'export PATH="$HOME/pine:$PATH"' >> $HOME/.zshrc && source $HOME/.zshrc
+git clone https://github.com/suyashmahar/pine.git "$HOME/pine" && echo 'export PATH="$HOME/pine:$PATH"' >> "$HOME/.zshrc" && source "$HOME/.zshrc"
 ```
 
 Usage  
