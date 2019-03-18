@@ -27,5 +27,4 @@ function load_dirs() {
 	lineSplit=("$line")
 	dirNameMap["${lineSplit[0]}"]="${lineSplit[1]}"
     done < "${SCRIPTPATH}/dirs.list"
-
 }

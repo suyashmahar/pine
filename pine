@@ -20,20 +20,20 @@ declare -A dirNameMap # map for easy searching of names
 # Updates all gitignore files in ${SCRIPTPATH}/gitignore
 function update_config_files() {
     echo -e "Updating local configuration files...\n"
-    if [[ -d ${SCRIPTPATH}/gitignore/.git ]]; then
+    if [[ -d "${SCRIPTPATH}/gitignore/.git" ]]; then
 	git -C "${SCRIPTPATH}/gitignore" pull origin master -ff && {
 
-	    for f in ${SCRIPTPATH}/gitignore/*; do
-		filename=$(basename "$f")
+	    for f in "${SCRIPTPATH}/gitignore/"*; do
+		filename="$(basename $f)"
 		newpath="${SCRIPTPATH}/gitignore/${filename,,}"
 		# Use output redirection to prevent warning when content of repo is not changed
 		mv "$f" "$newpath" &> /dev/null 
 	    done
 
 	    # Fix symlinks if any
-	    for f in $(find ${SCRIPTPATH}/gitignore/. -type l); do
-		originalLink=$(readlink $f)
-		ln -sfT ${originalLink,,} ${f}
+	    for f in "$(find ${SCRIPTPATH}/gitignore/. -type l)"; do
+		originalLink="$(readlink $f)"
+		ln -sfT "${originalLink,,}" "${f}"
 	    done
 	} || {
 	    echo "FATAL ERROR: Cloning failed"
@@ -52,25 +52,25 @@ function update_config_files() {
 
 # Checks if config files exists, if not download them
 function check_and_update_config_files() {
-    if [[ ! -d  ${SCRIPTPATH}/gitignore/.git ]]; then
+    if [[ ! -d  "${SCRIPTPATH}/gitignore/.git" ]]; then
 	update_config_files
     fi
 }
 
 # Compile names to a list
 function compile_names() {
-    for gitignoreFile in ${SCRIPTPATH}/gitignore/*.gitignore; do
-	filename=$(basename "$gitignoreFile") # remove path
-	configName="${filename%.*}" # remove extension
-	configName="${configName,,}" # to lowercase
+    for gitignoreFile in "${SCRIPTPATH}/gitignore/"*".gitignore"; do
+	filename="$(basename $gitignoreFile)"    # remove path
+	configName="${filename%.*}"              # remove extension
+	configName="${configName,,}"             # to lowercase
  	name="$name $configName" # append to name list
     done
-    echo "$name" > ${SCRIPTPATH}/names.list
+    echo "$name" > "${SCRIPTPATH}/names.list"
 }
 
 function load_names() {
-    if [ -f ${SCRIPTPATH}/names.list ]; then
-	storedNames=`cat ${SCRIPTPATH}/names.list` > $LOG_FILE || throw $FILE_NOT_FOUND_EX  # Read compiled list
+    if [ -f "${SCRIPTPATH}/names.list" ]; then
+	storedNames=`cat ${SCRIPTPATH}/names.list` > "$LOG_FILE" || throw "$FILE_NOT_FOUND_EX"  # Read compiled list
     else
 	echo "WARNING: Names list not compiled"
 	echo "use 'pine --help'"
@@ -111,9 +111,9 @@ function print_help() {
 # Check if config for $1 exist in .gitignore file
 function check_for_existing_name {
     local gitignoreFile="${SRC_PATH}/.gitignore"
-    currentcontent=$(<$gitignoreFile)
+    currentcontent="$(<$gitignoreFile)"
 
-    echo "$currentcontent" | awk -v a="$1" -f ${SCRIPTPATH}/utilities/checkconfig.awk && {
+    echo "$currentcontent" | awk -v a="$1" -f "${SCRIPTPATH}/utilities/checkconfig.awk" && {
 	return 1
     } || {
 	return 0
@@ -126,12 +126,12 @@ function add_config_to_file() {
 	echo "ERROR: Configuration exists, skipping"
     } || {
 	echo "Adding configuration for $arg"
-	echo "" >> ${SRC_PATH}/.gitignore
-	echo -e "#### ${1} ##########################" >> ${SRC_PATH}/.gitignore
-	echo -e "#### DO NOT DELETE PRECEDING LINE" >> ${SRC_PATH}/.gitignore
-	echo -e "#### PINE" >> ${SRC_PATH}/.gitignore
-	cat "${SCRIPTPATH}/gitignore/${1}.gitignore" >> ${SRC_PATH}/.gitignore
-	echo -e "#### DO NOT DELETE THIS LINE" >> ${SRC_PATH}/.gitignore
+	echo "" >> "${SRC_PATH}/.gitignore"
+	echo -e "#### ${1} ##########################" >> "${SRC_PATH}/.gitignore"
+	echo -e "#### DO NOT DELETE PRECEDING LINE" >> "${SRC_PATH}/.gitignore"
+	echo -e "#### PINE" >> "${SRC_PATH}/.gitignore"
+	cat "${SCRIPTPATH}/gitignore/${1}.gitignore" >> "${SRC_PATH}/.gitignore"
+	echo -e "#### DO NOT DELETE THIS LINE" >> "${SRC_PATH}/.gitignore"
     }
 }
 
@@ -141,7 +141,7 @@ function list_all_config() {
     if [ ! -f "${SRC_PATH}/.gitignore" ]; then
 	echo "ERROR: No .gitignore file found in current directory, Exiting"
     else
-	cat "${SRC_PATH}/.gitignore" | awk -f ${SCRIPTPATH}/utilities/listallconfig.awk 
+	cat "${SRC_PATH}/.gitignore" | awk -f "${SCRIPTPATH}/utilities/listallconfig.awk"
     fi
 }
 
@@ -149,10 +149,10 @@ function list_all_config() {
 function remove_config_from_file() {
     echo "Removing configuration for $arg"
     
-    local gitignoreFile=${SRC_PATH}/.gitignore
-    currentcontent=$(<$gitignoreFile)
+    local gitignoreFile="${SRC_PATH}/.gitignore"
+    currentcontent="$(<$gitignoreFile)"
 
-    echo "$currentcontent" | awk -v a="$1" -f ${SCRIPTPATH}/utilities/remove.awk > ${SRC_PATH}/.gitignore
+    echo "$currentcontent" | awk -v a="$1" -f "${SCRIPTPATH}/utilities/remove.awk" > "${SRC_PATH}/.gitignore"
 }
 
 
@@ -163,53 +163,53 @@ function init() {
     check_and_update_config_files
     
     # Create a gitignore file, if it doesn't exists
-    if [ ! -f ./.gitignore ]; then
+    if [ ! -f "./.gitignore" ]; then
 	echo "INFO: Creating .gitignore file"
 	touch ".gitignore"
     fi
 
     # Make directory for logs
-    if [ ! -d /tmp/pine_logs ]; then
-	mkdir -p /tmp/pine_logs
+    if [ ! -d "/tmp/pine_logs" ]; then
+	mkdir -p "/tmp/pine_logs"
     fi
     
     load_names
-    eval $(parse_params "$@") # Parse parameters
+    eval "$(parse_params $@)" # Parse parameters
 
     # If any parameter is help, print help and exit
-    if [[ $help ]]; then
+    if [[ "$help" ]]; then
 	print_help
 	exit
     fi
 
 
     # If any parameter is version, print version and exit
-    if [ $version ] || [ $v ]; then
+    if [ "$version" ] || [ "$v" ]; then
 	print_version
 	exit
     fi
 
 
     # If any parameter is update, update and exit
-    if [ $update ] || [ $u ]; then
+    if [ "$update" ] || [ "$u" ]; then
 	update_config_files
 	exit
     fi
 
     
     # If any parameter is for listing configs, list and exit
-    if [ $list ]; then
+    if [ "$list" ]; then
 	list_all_config 
 	exit
     fi
     
     # Search each parameter
     for arg in "${ARGV[@]}"; do
-	if [ $remove ] || [ $r ]; then
+	if [ "$remove" ] || [ "$r" ]; then
 	    remove_config_from_file $arg
 	else
-	    search_name_in_list $arg && { # Return 1
-		add_config_to_file $arg
+	    search_name_in_list "$arg" && { # Return 1
+		add_config_to_file "$arg"
 	    } || { # Return 0
 		echo "WARNING: configuration file for $arg not found"
 	    }
